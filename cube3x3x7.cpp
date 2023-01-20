@@ -1,6 +1,6 @@
 enum Color { Orange, Red, Blue, Green, White, Yellow};
 enum InitType { Default, Empty };
-enum Direction { Back, Front, Left, Right, Up, Down}
+enum Direction { Back, Front, Left, Right, Up, Down};
 
 struct Cubie {
 	Direction direction;
@@ -146,6 +146,48 @@ class Cube {
 			e->cubies[0].colors[0] = colA;
 			e->cubies[0].colors[1] = colB;
 		}
+
+		void front()
+		void fronti()
+		void front2()
+		void front2i()
+		void front3()
+		void front3i()
+
+		void back()
+		void backi()
+		void back2()
+		void back2i()
+		void back3()
+		void back3i()
+
+		void left()
+		void lefti()
+		void left2()
+		void left2i()
+		void left3()
+		void left3i()
+
+		void right()
+		void righti()
+		void right2()
+		void right2i()
+		void right3()
+		void right3i()
+
+		void up()
+		void upi()
+		void up2()
+		void up2i()
+		void up3()
+		void up3i()
+
+		void down()
+		void downi()
+		void down2()
+		void down2i()
+		void down3()
+		void down3i()
 
 		~Cube() {
 

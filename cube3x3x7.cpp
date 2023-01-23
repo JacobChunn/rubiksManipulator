@@ -1,3 +1,13 @@
+#define CORNER_CUBIES 3
+#define CORNER_COUNT 8
+
+#define EDGE_LONG_CUBIES 3
+#define EDGE_LONG_COUNT 8
+
+#define EDGE_SHORT_CUBIES 1
+#define EDGE_SHORT_COUNT 4
+
+
 enum Color { Orange, Red, Blue, Green, White, Yellow};
 enum InitType { Default, Empty };
 enum Direction { Back, Front, Left, Right, Up, Down};
@@ -35,15 +45,6 @@ class Cube {
 	private:
 		Cube3x3x7 cube;
 
-		const int cornerCubies = 3;
-		const int cornerCount = 8;
-
-		const int edgeLongCubies = 3;
-		const int edgeLongCount = 8;
-
-		const int edgeShortCubies = 1;
-		const int edgeShortCount = 4;
-
 	public:
 		Cube(InitType type) {
 
@@ -60,100 +61,99 @@ class Cube {
 
 			setCubeToEmpty();
 
-			fillCorner(&cube.corners[0], Back, Red, Green, Yellow);
-			fillCorner(&cube.corners[1], Back, Blue, Red, Yellow);
-			fillCorner(&cube.corners[2], Front, Orange, Blue, Yellow);
-			fillCorner(&cube.corners[3], Front, Green, Orange, Yellow);
+			fillCorner(&cube.corners[0], Red, Green, Yellow, Back, Up);
+			fillCorner(&cube.corners[1], Blue, Red, Yellow, Right, Up);
+			fillCorner(&cube.corners[2], Orange, Blue, Yellow, Front, Up);
+			fillCorner(&cube.corners[3], Green, Orange, Yellow, Left, Up);
 
-			fillCorner(&cube.corners[4], Back, Green, Red, White);
-			fillCorner(&cube.corners[5], Back, Red, Blue, White);
-			fillCorner(&cube.corners[6], Front, Blue, Orange, White);
-			fillCorner(&cube.corners[7], Front, Orange, Green, White);
+			fillCorner(&cube.corners[4], Green, Red, White, Left, Down);
+			fillCorner(&cube.corners[5], Red, Blue, White, Back, Down);
+			fillCorner(&cube.corners[6], Blue, Orange, White, Right, Down);
+			fillCorner(&cube.corners[7], Orange, Green, White, Front, Down);
 
-			fillLongEdge(&cube.edges[0], Back, Red, Yellow);
-			fillLongEdge(&cube.edges[1], Right, Blue, Yellow);
-			fillLongEdge(&cube.edges[2], Front, Orange, Yellow);
-			fillLongEdge(&cube.edges[3], Left, Green, Yellow);
+			fillLongEdge(&cube.edges[0], Red, Yellow, Back, Up);
+			fillLongEdge(&cube.edges[1], Blue, Yellow, Right, Up);
+			fillLongEdge(&cube.edges[2], Orange, Yellow, Front, Up);
+			fillLongEdge(&cube.edges[3], Green, Yellow, Left, Up);
 
-			fillShortEdge(&cube.edges[4], Back, Red, Green);
-			fillShortEdge(&cube.edges[5], Back, Blue, Red);
-			fillShortEdge(&cube.edges[6], Front, Orange, Blue);
-			fillShortEdge(&cube.edges[7], Front, Green, Orange);
+			fillShortEdge(&cube.edges[4], Red, Green, Back, Left);
+			fillShortEdge(&cube.edges[5], Blue, Red, Right, Back);
+			fillShortEdge(&cube.edges[6], Orange, Blue, Front, Right);
+			fillShortEdge(&cube.edges[7], Green, Orange, Left, Front);
 
-			fillLongEdge(&cube.edges[8], Back, Red, White);
-			fillLongEdge(&cube.edges[9], Right, Blue, White);
-			fillLongEdge(&cube.edges[10], Front, Orange, White);
-			fillLongEdge(&cube.edges[11], Left, Green, White);
+			fillLongEdge(&cube.edges[8], Red, White, Back, Down);
+			fillLongEdge(&cube.edges[9], Blue, White, Right, Down);
+			fillLongEdge(&cube.edges[10], Orange, White, Front, Down);
+			fillLongEdge(&cube.edges[11], Green, White, Left, Down);
 		}
 
 		void setCubeToEmpty() {
 
-			for (int i = 0; i < cornerCount; i++) {
-				cube.corners[i].cubies = new Cubie[cornerCubies];
+			for (int i = 0; i < CORNER_COUNT; i++) {
+				cube.corners[i].cubies = new Cubie[CORNER_CUBIES];
 
 				cube.corners[i].cubies[0].colors = new Color[3];
-				for (int j = 1; j < cornerCubies; j++) {
+				for (int j = 1; j < CORNER_CUBIES; j++) {
 					cube.corners[i].cubies[j].colors = new Color[2];
 				}
 			}
 
 			int edgeIter = 0;
-			for (int i = 0; i < edgeLongCount / 2; i++, edgeIter++) {
-				cube.edges[edgeIter].cubies = new Cubie[edgeLongCubies];
+			for (int i = 0; i < EDGE_LONG_COUNT / 2; i++, edgeIter++) {
+				cube.edges[edgeIter].cubies = new Cubie[EDGE_LONG_CUBIES];
 
 				cube.edges[edgeIter].cubies[0].colors = new Color[2];
-				for (int j = 1; j < edgeLongCubies; j++) {
+				for (int j = 1; j < EDGE_LONG_CUBIES; j++) {
 					cube.edges[edgeIter].cubies[j].colors = new Color[1];
 				}
 			}
 
-			for (int i = 0; i < edgeShortCount; i++, edgeIter++) {
-				cube.edges[edgeIter].cubies = new Cubie[edgeShortCubies];
+			for (int i = 0; i < EDGE_SHORT_COUNT; i++, edgeIter++) {
+				cube.edges[edgeIter].cubies = new Cubie[EDGE_SHORT_COUNT];
 
 				cube.edges[edgeIter].cubies[0].colors = new Color[2];
 			}
 
-			for (int i = 0; i < edgeLongCount / 2; i++, edgeIter++) {
-				cube.edges[edgeIter].cubies = new Cubie[edgeLongCubies];
+			for (int i = 0; i < EDGE_LONG_COUNT / 2; i++, edgeIter++) {
+				cube.edges[edgeIter].cubies = new Cubie[EDGE_LONG_CUBIES];
 
 				cube.edges[edgeIter].cubies[0].colors = new Color[2];
-				for (int j = 1; j < edgeLongCubies; j++) {
+				for (int j = 1; j < EDGE_LONG_CUBIES; j++) {
 					cube.edges[edgeIter].cubies[j].colors = new Color[1];
 				}
 			}
 		}
 
-		void fillCorner(Corner* c, Color colA, Color colB, Color colC,
-			Direction colAdir, Direction colCdir) {
+		void fillCorner(Corner* c, Color col0, Color col1, Color col2,
+			Direction col0dir, Direction col2dir) {
 
-			c->cubies[0].direction = colCdir;
-			c->cubies[0].colors[0] = colA;
-			c->cubies[0].colors[1] = colB;
-			c->cubies[0].colors[2] = colC;
-			for (int i = 1; i < 3; i++) {
-				c->cubies[i].direction = colAdir;
-				c->cubies[i].colors[0] = colA;
-				c->cubies[i].colors[1] = colB;
+			c->dirPrimary = col2dir;
+			c->dirSecondary = col0dir;
+			c->cubies[0].colors[2] = col2;
+			for (int i = 0; i < 3; i++) {
+				c->cubies[i].colors[0] = col0;
+				c->cubies[i].colors[1] = col1;
 			}
 		}
 
-		void fillLongEdge(Edge* e, Color colA, Color colB, Direction colAdir,
-			Direction colBdir) {
+		void fillLongEdge(Edge* e, Color col0, Color col1, Direction col0dir,
+			Direction col1dir) {
 
-			e->cubies[0].direction = colBdir;
-			e->cubies[0].colors[0] = colA;
-			e->cubies[0].colors[1] = colB;
-			for (int i = 1; i < 3; i++) {
-				e->cubies[i].direction = colAdir;
-				e->cubies[i].colors[0] = colA;
+			e->dirPrimary = col1dir;
+			e->dirSecondary = col0dir;
+			e->cubies[0].colors[1] = col1;
+			for (int i = 0; i < 3; i++) {
+				e->cubies[i].colors[0] = col0;
 			}
 		}
 
-		void fillShortEdge(Edge* e, Color colA, Color colB, Direction colAdir) {
+		void fillShortEdge(Edge* e, Color col0, Color col1, Direction col0dir,
+			Direction col1dir) {
 
-			e->cubies[0].direction = colAdir;
-			e->cubies[0].colors[0] = colA;
-			e->cubies[0].colors[1] = colB;
+			e->dirPrimary = col1dir;
+			e->dirSecondary = col0dir;
+			e->cubies[0].colors[0] = col0;
+			e->cubies[0].colors[1] = col1;
 		}
 
 		template <typename T>

@@ -7,6 +7,7 @@
 #define EDGE_SHORT_CUBIES 1
 #define EDGE_SHORT_COUNT 4
 
+#define DIR_COUNT 6
 
 enum Color { Orange, Red, Blue, Green, White, Yellow};
 enum InitType { Default, Empty };
@@ -157,11 +158,34 @@ class Cube {
 		}
 
 		template <typename T>
-		void cycle(T* arr, int arrLen) {
+		void cycle(int* pieceArr, Direction* dirArr, int arrLen) {
+			Direction nextDirTable[DIR_COUNT];
 
+			// Avoids Warp Divergence if ran on GPU
+			for (int i = 0; i < DIR_COUNT; i++) {
+				nextDirTable[i] = i;
+			}
+
+			for (int i = 0; i < arrLen; i++) {
+				nextDirTable[ dirArr[i] ] = dirArr[ (i + 1) % 4 ];
+			}
+
+			T temp = arr[0];
+			for (int i = 0; i < arrLen - 1; i++) {
+				arr[i] = arr[i + 1];
+				arr[i].dirPrimary = nextDirTable[ arr[i].dirPrimary ];
+				arr[i].dirSecondary = nextDirTable[ arr[i].dirSecondary ];
+			}
+			arr[arrLen - 1] = temp;
 		}
 
-		void front()
+		void front() {
+			//TODO: put nextDirTable precomputed in move function
+
+			int pieceCycle[] = {4, 3, 7, 8};
+			Direction dirCycle[] = {Up, Right, Down, Left};
+			cycle<Corner>(pieceCycle, dirCycle, 4);
+		}
 		void back()
 		void left()
 		void right()

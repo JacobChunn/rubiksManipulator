@@ -8,10 +8,15 @@
 #define EDGE_SHORT_COUNT 4
 
 #define DIR_COUNT 6
+#define BIDIRECTIONAL_MOVE_COUNT 36
 
 enum Color { Orange, Red, Blue, Green, White, Yellow};
 enum InitType { Default, Empty };
-enum Direction { Back, Front, Left, Right, Up, Down};
+enum Direction { Front, Back, Left, Right, Up, Down};
+enum Moves { mFront, mBack, mLeft, mRight, mUp, mDown,
+	mFrontS1, mBackS1, mLeftS1, mRightS1, mUpS1, mDownS1,
+	mFrontS2, mBackS2, mLeftS2, mRightS2, mUpS2, mDownS2,
+	mFrontS2, mBackS2, mLeftS2, mRightS2, mUpS2, mDownS2 };
 
 struct Cubie {
 	Color* colors;
@@ -45,6 +50,7 @@ class Cube {
 
 	private:
 		Cube3x3x7 cube;
+		Direction** nextDirArray;
 
 	public:
 		Cube(InitType type) {
@@ -57,6 +63,12 @@ class Cube {
 					setCubeToSolved();
 			}
 		}
+
+		void nextDirArrayInit() {
+			nextDirArray = new Direction*[BIDIRECTIONAL_MOVE_COUNT];
+			
+		}
+
 
 		void setCubeToSolved() {
 
@@ -179,7 +191,7 @@ class Cube {
 			arr[arrLen - 1] = temp;
 		}
 
-		void front() {
+		void front(bool inverted, Direction* nextDirArray) {
 			//TODO: put nextDirTable precomputed in move function
 
 			int pieceCycle[] = {4, 3, 7, 8};

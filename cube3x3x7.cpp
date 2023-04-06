@@ -11,17 +11,14 @@
 
 #define DIR_COUNT 6
 #define BIDIRECTIONAL_MOVE_COUNT 36
-#define MOVETYPE_COUNT 12
+#define MOVEDirection_COUNT 12
 
 enum Color { Orange, Red, Blue, Green, White, Yellow};
 enum InitType { Default, Empty };
 enum Direction { Front, Back, Left, Right, Up, Down};
-enum Moves { mFront, mBack, mLeft, mRight, mUp, mDown,
-	mFrontS1, mBackS1, mLeftS1, mRightS1, mUpS1, mDownS1,
-	mFrontS2, mBackS2, mLeftS2, mRightS2, mUpS2, mDownS2,
-	mFrontS2, mBackS2, mLeftS2, mRightS2, mUpS2, mDownS2 };
-enum MoveTypes { mtFront, mtFronti, mtBack, mtBacki, mtLeft, mtLefti,
-	mtRight, mtRighti, mtUp, mtUpi, mtDown, mtDowni};
+enum MoveType { mtWhole, mtSliceInner, mtSliceMiddle, mtSliceOuter };
+enum MoveDirection { mdFront, mdFronti, mdBack, mdBacki, mdLeft, mdLefti,
+	mdRight, mdRighti, mdUp, mdUpi, mdDown, mdDowni};
 
 
 struct Cubie {
@@ -56,12 +53,14 @@ class Cube {
 
 	private:
 		Cube3x3x7 cube;
-		Direction** nextDirTable;
+		// move[moveDirection][move][Corner/Edge Cycle (or 0/1 respectively)]
+		int**** move;
+		Direction** nextDirTables;
 
 	public:
 		Cube(InitType type) {
 
-			nextDirTableInit();
+			nextDirTablesInit();
 
 			switch(type) {
 				case Empty:
@@ -72,41 +71,41 @@ class Cube {
 			}
 		}
 
-		void nextDirTableInit() {
-			Direction** dirCycles = new Direction*[MOVETYPE_COUNT];
-			for (int i = 0; i < MOVETYPE_COUNT; i++) {
+		void nextDirTablesInit() {
+			Direction** dirCycles = new Direction*[MOVEDirection_COUNT];
+			for (int i = 0; i < MOVEDirection_COUNT; i++) {
 				dirCycles[i] = new Direction[4];
 			}
 			
-			dirCycles[mtFront] = (Direction[]){Up, Right, Down, Left};
-			dirCycles[mtFronti] = (Direction[]){Left, Down, Right, Up};
+			dirCycles[mdFront] = (Direction[]){Up, Right, Down, Left};
+			dirCycles[mdFronti] = (Direction[]){Left, Down, Right, Up};
 
-			dirCycles[mtBack] = (Direction[]){Up, Right, Down, Left};
-			dirCycles[mtBacki] = (Direction[]){Left, Down, Right, Up};
+			dirCycles[mdBack] = (Direction[]){Up, Right, Down, Left};
+			dirCycles[mdBacki] = (Direction[]){Left, Down, Right, Up};
 			
-			dirCycles[mtLeft] = (Direction[]){Up, Front, Down, Back};
-			dirCycles[mtLefti] = (Direction[]){Back, Down, Front, Up};
+			dirCycles[mdLeft] = (Direction[]){Up, Front, Down, Back};
+			dirCycles[mdLefti] = (Direction[]){Back, Down, Front, Up};
 
-			dirCycles[mtRight] = (Direction[]){Up, Back, Down, Front};
-			dirCycles[mtRighti] = (Direction[]){Front, Down, Back, Up};
+			dirCycles[mdRight] = (Direction[]){Up, Back, Down, Front};
+			dirCycles[mdRighti] = (Direction[]){Front, Down, Back, Up};
 
-			dirCycles[mtUp] = (Direction[]){Back, Right, Front, Left};
-			dirCycles[mtUpi] = (Direction[]){Left, Front, Right, Back};
+			dirCycles[mdUp] = (Direction[]){Back, Right, Front, Left};
+			dirCycles[mdUpi] = (Direction[]){Left, Front, Right, Back};
 
-			dirCycles[mtDown] = (Direction[]){Back, Left, Front, Right};
-			dirCycles[mtDowni] = (Direction[]){Right, Front, Left, Back};
+			dirCycles[mdDown] = (Direction[]){Back, Left, Front, Right};
+			dirCycles[mdDowni] = (Direction[]){Right, Front, Left, Back};
 
 			ComputeNextDirArray(dirCycles, 4);
 		}
 
 		void ComputeNextDirArray(Direction** dirCycles, int cycleLen) {
-			for (int j = 0; j < MOVETYPE_COUNT; j++) {
+			for (int j = 0; j < MOVEDirection_COUNT; j++) {
 				for (int i = 0; i < DIR_COUNT; i++) {
-					nextDirTable[j][i] = (Direction)i;
+					nextDirTables[j][i] = (Direction)i;
 				}
 
 				for (int i = 0; i < cycleLen; i++) {
-					nextDirTable[j][dirCycles[j][i]] = dirCycles[j][(i + 1) % cycleLen];
+					nextDirTables[j][dirCycles[j][i]] = dirCycles[j][(i + 1) % cycleLen];
 				}	
 			}
 		}
@@ -209,35 +208,76 @@ class Cube {
 			e->cubies[0].colors[0] = col0;
 			e->cubies[0].colors[1] = col1;
 		}
-
 		template <typename T>
-		void cycle(int* pieceArr, Direction* dirArr, int arrLen) {
-			Direction nextDirTable[DIR_COUNT];
-
-			// Avoids Warp Divergence if ran on GPU
-			for (int i = 0; i < DIR_COUNT; i++) {
-				nextDirTable[i] = i;
-			}
-
-			for (int i = 0; i < arrLen; i++) {
-				nextDirTable[ dirArr[i] ] = dirArr[ (i + 1) % 4 ];
-			}
-
-			T temp = arr[0];
+		void cycleWhole(T (&pieceArr)[], int pieceCycle[], MoveDirection moveDirection, int arrLen) {
+			T temp = pieceArr[0];
 			for (int i = 0; i < arrLen - 1; i++) {
-				arr[i] = arr[i + 1];
-				arr[i].dirPrimary = nextDirTable[ arr[i].dirPrimary ];
-				arr[i].dirSecondary = nextDirTable[ arr[i].dirSecondary ];
+				pieceArr[i] = pieceArr[i + 1];
+				pieceArr[i].dirPrimary = nextDirTables[ pieceArr[i].dirPrimary ];
+				pieceArr[i].dirSecondary = nextDirTables[ pieceArr[i].dirSecondary ];
 			}
-			arr[arrLen - 1] = temp;
+			pieceArr[arrLen - 1] = temp;
 		}
 
-		void front(bool inverted, Direction* nextDirArray) {
-			//TODO: put nextDirTable precomputed in move function
+		template <typename T>
+		void cycleMidOrInSlice(T (&pieceArr)[], int slice, int pieceCycle[], MoveDirection moveDirection, int arrLen) {
+			T temp = pieceArr[0].cubies[slice];
+			for (int i = 0; i < arrLen - 1; i++) {
+				pieceArr[i].cubies[slice] = pieceArr[i + 1].cubies[slice];
+			}
+			pieceArr[arrLen - 1].cubies[slice] = temp;
+		}
 
-			int pieceCycle[] = {4, 3, 7, 8};
-			Direction dirCycle[] = {Up, Right, Down, Left};
-			cycle<Corner>(pieceCycle, dirCycle, 4);
+		template <typename T>
+		void cycleOutSlice(T (&pieceArr)[], int slice, int pieceCycle[], MoveDirection moveDirection, int arrLen) {
+			T temp = pieceArr[0].cubies[slice];
+			for (int i = 0; i < arrLen - 1; i++) {
+				pieceArr[i].cubies[slice] = pieceArr[i + 1].cubies[slice];
+				pieceArr[i].dirSecondary = nextDirTables[ pieceArr[i].dirSecondary ];
+			}
+			pieceArr[arrLen - 1] = temp;
+		}
+
+		void cycleWholeHelper(int cornerCycle[], int edgeCycle[], MoveDirection mt, int len) {
+			cycleWhole<Corner>(cube.corners, cornerCycle, mt, len);
+			cycleWhole<Edge>(cube.edges, edgeCycle, mt, len);
+		}
+
+		void cycleMidOrInSliceHelper() {
+
+		}
+
+		void cycleOutSliceHelper() {
+			
+		}
+
+		void moveInit() {
+			move = new int***[MOVEDirection_COUNT];
+			for (int i = 0; i < MOVEDirection_COUNT; i++) {
+				move[i] = new int**[4];
+				for (int j = 0; j < 4; j++) {
+					move[i][j] = new int*[2];
+				}
+			}
+			move[mdFront][mtWhole][0] = (int[]){3, 2, 6, 7};
+			move[mdFront][mtWhole][1] = (int[]){2, 6, 10, 7};
+
+			// TO DO: Finish inputting correct corner/edge cycle values
+			// EDIT: How does slicing formatting work?
+			move[mdFront][mtWhole][0] = (int[]){3, 2, 6, 7};
+			move[mdFront][mtWhole][1] = (int[]){2, 6, 10, 7};
+
+			move[mdFront][mtWhole][0] = (int[]){3, 2, 6, 7};
+			move[mdFront][mtWhole][1] = (int[]){2, 6, 10, 7};
+
+			move[mdFront][mtWhole][0] = (int[]){3, 2, 6, 7};
+			move[mdFront][mtWhole][1] = (int[]){2, 6, 10, 7};
+		}
+
+		void front() {
+			int cornerCycle[] = {3, 2, 6, 7};
+			int edgeCycle[] = {2, 6, 10, 7};
+			cycleWholeHelper(cornerCycle, edgeCycle, mdFront, 4);
 		}
 		void back()
 		void left()
@@ -252,7 +292,9 @@ class Cube {
 		void upi()
 		void downi()
 
-		void frontS1()
+		void frontS1() {
+			cycleSlice<Corner>();
+		}
 		void backS1()
 		void leftS1()
 		void rightS1()

@@ -1,3 +1,5 @@
+#include <string.h>
+
 #define CORNER_CUBIES 3
 #define CORNER_COUNT 8
 
@@ -9,6 +11,7 @@
 
 #define DIR_COUNT 6
 #define BIDIRECTIONAL_MOVE_COUNT 36
+#define MOVETYPE_COUNT 12
 
 enum Color { Orange, Red, Blue, Green, White, Yellow};
 enum InitType { Default, Empty };
@@ -17,6 +20,9 @@ enum Moves { mFront, mBack, mLeft, mRight, mUp, mDown,
 	mFrontS1, mBackS1, mLeftS1, mRightS1, mUpS1, mDownS1,
 	mFrontS2, mBackS2, mLeftS2, mRightS2, mUpS2, mDownS2,
 	mFrontS2, mBackS2, mLeftS2, mRightS2, mUpS2, mDownS2 };
+enum MoveTypes { mtFront, mtFronti, mtBack, mtBacki, mtLeft, mtLefti,
+	mtRight, mtRighti, mtUp, mtUpi, mtDown, mtDowni};
+
 
 struct Cubie {
 	Color* colors;
@@ -50,10 +56,12 @@ class Cube {
 
 	private:
 		Cube3x3x7 cube;
-		Direction** nextDirArray;
+		Direction** nextDirTable;
 
 	public:
 		Cube(InitType type) {
+
+			nextDirTableInit();
 
 			switch(type) {
 				case Empty:
@@ -64,11 +72,44 @@ class Cube {
 			}
 		}
 
-		void nextDirArrayInit() {
-			nextDirArray = new Direction*[BIDIRECTIONAL_MOVE_COUNT];
+		void nextDirTableInit() {
+			Direction** dirCycles = new Direction*[MOVETYPE_COUNT];
+			for (int i = 0; i < MOVETYPE_COUNT; i++) {
+				dirCycles[i] = new Direction[4];
+			}
 			
+			dirCycles[mtFront] = (Direction[]){Up, Right, Down, Left};
+			dirCycles[mtFronti] = (Direction[]){Left, Down, Right, Up};
+
+			dirCycles[mtBack] = (Direction[]){Up, Right, Down, Left};
+			dirCycles[mtBacki] = (Direction[]){Left, Down, Right, Up};
+			
+			dirCycles[mtLeft] = (Direction[]){Up, Front, Down, Back};
+			dirCycles[mtLefti] = (Direction[]){Back, Down, Front, Up};
+
+			dirCycles[mtRight] = (Direction[]){Up, Back, Down, Front};
+			dirCycles[mtRighti] = (Direction[]){Front, Down, Back, Up};
+
+			dirCycles[mtUp] = (Direction[]){Back, Right, Front, Left};
+			dirCycles[mtUpi] = (Direction[]){Left, Front, Right, Back};
+
+			dirCycles[mtDown] = (Direction[]){Back, Left, Front, Right};
+			dirCycles[mtDowni] = (Direction[]){Right, Front, Left, Back};
+
+			ComputeNextDirArray(dirCycles, 4);
 		}
 
+		void ComputeNextDirArray(Direction** dirCycles, int cycleLen) {
+			for (int j = 0; j < MOVETYPE_COUNT; j++) {
+				for (int i = 0; i < DIR_COUNT; i++) {
+					nextDirTable[j][i] = (Direction)i;
+				}
+
+				for (int i = 0; i < cycleLen; i++) {
+					nextDirTable[j][dirCycles[j][i]] = dirCycles[j][(i + 1) % cycleLen];
+				}	
+			}
+		}
 
 		void setCubeToSolved() {
 

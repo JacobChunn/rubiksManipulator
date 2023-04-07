@@ -11,7 +11,7 @@
 
 #define DIR_COUNT 6
 #define BIDIRECTIONAL_MOVE_COUNT 36
-#define MOVEDirection_COUNT 12
+#define MOVEDIRECTION_COUNT 12
 
 enum Color { Orange, Red, Blue, Green, White, Yellow};
 enum InitType { Default, Empty };
@@ -72,8 +72,8 @@ class Cube {
 		}
 
 		void nextDirTablesInit() {
-			Direction** dirCycles = new Direction*[MOVEDirection_COUNT];
-			for (int i = 0; i < MOVEDirection_COUNT; i++) {
+			Direction** dirCycles = new Direction*[MOVEDIRECTION_COUNT];
+			for (int i = 0; i < MOVEDIRECTION_COUNT; i++) {
 				dirCycles[i] = new Direction[4];
 			}
 			
@@ -99,7 +99,7 @@ class Cube {
 		}
 
 		void ComputeNextDirArray(Direction** dirCycles, int cycleLen) {
-			for (int j = 0; j < MOVEDirection_COUNT; j++) {
+			for (int j = 0; j < MOVEDIRECTION_COUNT; j++) {
 				for (int i = 0; i < DIR_COUNT; i++) {
 					nextDirTables[j][i] = (Direction)i;
 				}
@@ -252,8 +252,8 @@ class Cube {
 		}
 
 		void moveInit() {
-			move = new int***[MOVEDirection_COUNT];
-			for (int i = 0; i < MOVEDirection_COUNT; i++) {
+			move = new int***[MOVEDIRECTION_COUNT];
+			for (int i = 0; i < MOVEDIRECTION_COUNT; i++) {
 				move[i] = new int**[4];
 				for (int j = 0; j < 4; j++) {
 					move[i][j] = new int*[2];

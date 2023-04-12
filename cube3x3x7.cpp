@@ -54,13 +54,14 @@ class Cube {
 	private:
 		Cube3x3x7 cube;
 		// move[moveDirection][move][Corner/Edge Cycle (or 0/1 respectively)]
-		int**** move;
+		int*** move;
 		Direction** nextDirTables;
 
 	public:
 		Cube(InitType type) {
 
 			nextDirTablesInit();
+			moveInit();
 
 			switch(type) {
 				case Empty:
@@ -209,18 +210,28 @@ class Cube {
 			e->cubies[0].colors[1] = col1;
 		}
 		template <typename T>
-		void cycleWhole(T (&pieceArr)[], int pieceCycle[], MoveDirection moveDirection, int arrLen) {
+		void cycleWhole(T (&pieceArr)[], int pieceCycle[], MoveDirection md, int arrLen) {
 			T temp = pieceArr[0];
 			for (int i = 0; i < arrLen - 1; i++) {
 				pieceArr[i] = pieceArr[i + 1];
-				pieceArr[i].dirPrimary = nextDirTables[ pieceArr[i].dirPrimary ];
-				pieceArr[i].dirSecondary = nextDirTables[ pieceArr[i].dirSecondary ];
+				pieceArr[i].dirPrimary = nextDirTables[md][ pieceArr[i].dirPrimary ];
+				pieceArr[i].dirSecondary = nextDirTables[md][ pieceArr[i].dirSecondary ];
 			}
 			pieceArr[arrLen - 1] = temp;
 		}
 
 		template <typename T>
-		void cycleMidOrInSlice(T (&pieceArr)[], int slice, int pieceCycle[], MoveDirection moveDirection, int arrLen) {
+		void cycleOutSlice(T (&pieceArr)[], int pieceCycle[], MoveDirection md, int arrLen) {
+			T temp = pieceArr[0].cubies[0];
+			for (int i = 0; i < arrLen - 1; i++) {
+				pieceArr[i].cubies[0] = pieceArr[i + 1].cubies[0];
+				pieceArr[i].dirSecondary = nextDirTables[md][ pieceArr[i].dirSecondary ];
+			}
+			pieceArr[arrLen - 1] = temp;
+		}
+
+		template <typename T>
+		void cycleMidOrInSlice(T (&pieceArr)[], int pieceCycle[], int arrLen, int slice) {
 			T temp = pieceArr[0].cubies[slice];
 			for (int i = 0; i < arrLen - 1; i++) {
 				pieceArr[i].cubies[slice] = pieceArr[i + 1].cubies[slice];
@@ -228,50 +239,61 @@ class Cube {
 			pieceArr[arrLen - 1].cubies[slice] = temp;
 		}
 
-		template <typename T>
-		void cycleOutSlice(T (&pieceArr)[], int slice, int pieceCycle[], MoveDirection moveDirection, int arrLen) {
-			T temp = pieceArr[0].cubies[slice];
-			for (int i = 0; i < arrLen - 1; i++) {
-				pieceArr[i].cubies[slice] = pieceArr[i + 1].cubies[slice];
-				pieceArr[i].dirSecondary = nextDirTables[ pieceArr[i].dirSecondary ];
-			}
-			pieceArr[arrLen - 1] = temp;
+		void cycleWholeHelper(int cornerCycle[], int edgeCycle[], MoveDirection md, int len) {
+			cycleWhole<Corner>(cube.corners, cornerCycle, md, len);
+			cycleWhole<Edge>(cube.edges, edgeCycle, md, len);
 		}
 
-		void cycleWholeHelper(int cornerCycle[], int edgeCycle[], MoveDirection mt, int len) {
-			cycleWhole<Corner>(cube.corners, cornerCycle, mt, len);
-			cycleWhole<Edge>(cube.edges, edgeCycle, mt, len);
+		void cycleOutSliceHelper(int cornerCycle[], int edgeCycle[], MoveDirection md, int len) {
+			cycleOutSlice<Corner>(cube.corners, cornerCycle, md, len);
+			cycleOutSlice<Edge>(cube.edges, edgeCycle, md, len);
 		}
 
-		void cycleMidOrInSliceHelper() {
-
-		}
-
-		void cycleOutSliceHelper() {
-			
+		void cycleMidOrInSliceHelper(int cornerCycle[], int edgeCycle[], MoveDirection md, int len, int slice) {
+			cycleMidOrInSlice<Corner>(cube.corners, cornerCycle, len, slice);
+			cycleMidOrInSlice<Edge>(cube.edges, edgeCycle, len, slice);
 		}
 
 		void moveInit() {
-			move = new int***[MOVEDIRECTION_COUNT];
+			move = new int**[MOVEDIRECTION_COUNT];
 			for (int i = 0; i < MOVEDIRECTION_COUNT; i++) {
-				move[i] = new int**[4];
-				for (int j = 0; j < 4; j++) {
-					move[i][j] = new int*[2];
-				}
+					move[i] = new int*[2];
 			}
-			move[mdFront][mtWhole][0] = (int[]){3, 2, 6, 7};
-			move[mdFront][mtWhole][1] = (int[]){2, 6, 10, 7};
+			move[mdFront][0] = (int[]){3, 2, 6, 7};
+			move[mdFront][1] = (int[]){2, 6, 10, 7};
 
-			// TO DO: Finish inputting correct corner/edge cycle values
-			// EDIT: How does slicing formatting work?
-			move[mdFront][mtWhole][0] = (int[]){3, 2, 6, 7};
-			move[mdFront][mtWhole][1] = (int[]){2, 6, 10, 7};
+			move[mdFronti][0] = (int[]){7, 6, 2, 3};
+			move[mdFronti][1] = (int[]){7, 10, 6, 2};
 
-			move[mdFront][mtWhole][0] = (int[]){3, 2, 6, 7};
-			move[mdFront][mtWhole][1] = (int[]){2, 6, 10, 7};
+			move[mdBack][0] = (int[]){0, 4, 5, 1};
+			move[mdBack][1] = (int[]){0, 4, 8, 5};
 
-			move[mdFront][mtWhole][0] = (int[]){3, 2, 6, 7};
-			move[mdFront][mtWhole][1] = (int[]){2, 6, 10, 7};
+			move[mdBacki][0] = (int[]){1, 5, 4, 0};
+			move[mdBacki][1] = (int[]){5, 8, 4, 0};
+
+			move[mdLeft][0] = (int[]){0, 3, 7, 4};
+			move[mdLeft][1] = (int[]){3, 7, 11, 4};
+
+			move[mdLefti][0] = (int[]){4, 7, 3, 0};
+			move[mdLefti][1] = (int[]){4, 11, 7, 3};
+
+			move[mdRight][0] = (int[]){1, 5, 6, 2};
+			move[mdRight][1] = (int[]){1, 5, 9, 6};
+
+			move[mdRighti][0] = (int[]){2, 6, 5, 1};
+			move[mdRighti][1] = (int[]){6, 9, 5, 1};
+
+			move[mdUp][0] = (int[]){0, 1, 2, 3};
+			move[mdUp][1] = (int[]){0, 1, 2, 3};
+
+			move[mdUpi][0] = (int[]){3, 2, 1, 0};
+			move[mdUpi][1] = (int[]){3, 2, 1, 0};
+
+			move[mdDown][0] = (int[]){4, 5, 6, 7};
+			move[mdDown][1] = (int[]){8, 9, 10, 11};
+
+			move[mdDowni][0] = (int[]){7, 6, 5, 4};
+			move[mdDowni][1] = (int[]){11, 10, 9, 8};
 		}
 
 		void front() {
